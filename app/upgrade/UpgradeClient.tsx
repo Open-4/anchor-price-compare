@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 
 const PLANS = [
   {
@@ -26,107 +26,63 @@ function getUserId(): string {
   return uid;
 }
 
-export default function UpgradeClient({
-  paypalClientId,
-}: {
-  paypalClientId: string;
-}) {
+export default function UpgradeClient() {
   const [planId, setPlanId] = useState("yearly");
-  const [step, setStep] = useState<"form" | "paypal" | "success" | "error">("form");
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [email, setEmail] = useState("");
 
-  const paypalRef = useRef<HTMLDivElement>(null);
-  const buttonsRendered = useRef(false);
   const plan = PLANS.find((p) => p.id === planId)!;
 
-  // ── Render PayPal Smart Buttons ──
-  useEffect(() => {
-    if (step !== "paypal" || !paypalRef.current || buttonsRendered.current) return;
-    if (!paypalClientId) {
-      setErrorMsg("支付功能暂未配置，请联系管理员");
-      return;
+  async function handlePayPal() {
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const res = await fetch("/api/paypal/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price: plan.price,
+          currency: "USD",
+          userId: getUserId(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "创建订单失败");
+
+      // 在新窗口/标签页打开 PayPal
+      window.open(data.approvalUrl, "_blank");
+      setSuccess(true);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "网络错误");
+    } finally {
+      setLoading(false);
     }
+  }
 
-    buttonsRendered.current = true;
-
-    const script = document.createElement("script");
-    script.src = `https://www.paypal.com/sdk/js?client-id=${paypalClientId}&currency=USD&intent=capture`;
-    script.async = true;
-    script.onload = () => {
-      const pp = (window as any).paypal;
-      if (!pp) { setErrorMsg("PayPal 加载异常"); return; }
-
-      pp.Buttons({
-        createOrder: async () => {
-          const res = await fetch("/api/paypal/create", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ price: plan.price, currency: "USD", userId: getUserId() }),
-          });
-          if (!res.ok) throw new Error((await res.json()).error || "创建订单失败");
-          return (await res.json()).orderId;
-        },
-        onApprove: async (data: { orderID: string }) => {
-          setLoading(true);
-          const res = await fetch("/api/paypal/capture-client", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: data.orderID, userId: getUserId() }),
-          });
-          const result = await res.json();
-          if (result.status === "COMPLETED") {
-            setStep("success");
-          } else {
-            setErrorMsg(result.error || "支付失败");
-            setStep("error");
-          }
-          setLoading(false);
-        },
-        onCancel: () => {
-          setErrorMsg("支付已取消");
-          setStep("form");
-          buttonsRendered.current = false;
-        },
-        onError: (err: any) => {
-          setErrorMsg("支付组件加载失败，请检查浏览器是否拦截了弹窗或刷新重试");
-          setStep("form");
-          buttonsRendered.current = false;
-        },
-      }).render(paypalRef.current);
-    };
-    script.onerror = () => {
-      setErrorMsg("PayPal SDK 加载失败");
-      setStep("form");
-      buttonsRendered.current = false;
-    };
-    document.body.appendChild(script);
-  }, [step, paypalClientId, plan.price]);
-
-  // ── Success ──
-  if (step === "success") {
+  if (success) {
     return (
       <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-4xl">✓</div>
-        <h1 className="mt-8 text-3xl font-bold">支付成功 🎉</h1>
-        <p className="mt-3 text-zinc-500">你已是 Pro 会员</p>
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✓</div>
+        <h1 className="mt-6 text-2xl font-bold">正在跳转 PayPal</h1>
+        <p className="mt-2 text-sm text-zinc-500">新窗口已打开，请在 PayPal 完成付款。</p>
+        <p className="mt-1 text-xs text-zinc-400">付款完成后会自动跳回本站</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">选择你的计划</h1>
-        <p className="mt-2 text-zinc-500">升级 Pro，解锁全部功能</p>
-      </div>
+      <h1 className="text-center text-3xl font-bold tracking-tight">选择你的计划</h1>
+      <p className="mt-2 text-center text-zinc-500">升级 Pro，解锁全部功能</p>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-3">
         {PLANS.map((p) => {
           const active = planId === p.id;
           return (
-            <button key={p.id} onClick={() => { setPlanId(p.id); setStep("form"); buttonsRendered.current = false; }}
+            <button key={p.id} onClick={() => { setPlanId(p.id); setErrorMsg(""); }}
               className={`relative rounded-2xl border-2 p-6 text-left transition-all ${
                 active ? "border-blue-500 bg-blue-50 shadow-lg shadow-blue-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md"
               }`}>
@@ -150,32 +106,15 @@ export default function UpgradeClient({
         })}
       </div>
 
-      {step === "form" && (
-        <div className="mx-auto mt-10 max-w-md text-center">
-          <p className="mb-3 text-sm text-zinc-500">已选：{plan.name} — ${plan.price}</p>
-          <button onClick={() => { setErrorMsg(""); setStep("paypal"); }}
-            className="w-full rounded-xl bg-[#0070ba] py-3 text-sm font-medium text-white shadow-lg hover:bg-[#003087]"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106z"/></svg>
-              使用 PayPal 支付
-            </span>
-          </button>
-          <p className="mt-2 text-xs text-zinc-400">支持 PayPal / 信用卡 / 借记卡</p>
-          {errorMsg && <p className="mt-4 text-sm text-red-500">{errorMsg}</p>}
-        </div>
-      )}
-
-      {step === "paypal" && (
-        <div className="mx-auto mt-10 max-w-md">
-          <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="mb-3 text-base font-semibold">支付</h2>
-            <div ref={paypalRef} className="min-h-[150px]" />
-            {loading && <p className="mt-3 text-center text-sm text-zinc-500">处理中…</p>}
-            {errorMsg && <p className="mt-3 text-sm text-red-500">{errorMsg}</p>}
-          </div>
-        </div>
-      )}
+      <div className="mx-auto mt-10 max-w-md text-center">
+        <p className="mb-3 text-sm text-zinc-500">已选：{plan.name} — ${plan.price}</p>
+        <button onClick={handlePayPal} disabled={loading}
+          className="w-full rounded-xl bg-[#0070ba] py-3 text-sm font-medium text-white shadow-lg hover:bg-[#003087] disabled:opacity-50">
+          {loading ? "正在创建订单…" : "使用 PayPal 支付"}
+        </button>
+        <p className="mt-2 text-xs text-zinc-400">支持信用卡 / 借记卡 / PayPal 余额</p>
+        {errorMsg && <p className="mt-4 text-sm text-red-500">{errorMsg}</p>}
+      </div>
     </div>
   );
 }
