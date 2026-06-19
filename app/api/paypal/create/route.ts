@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
       price: priceNum,
       currency: currency || "USD",
       userId,
-      returnUrl: `${origin}/api/paypal/capture?order_id={order_id}&user_id=${userId}`,
+      returnUrl: `${origin}/api/paypal/capture?user_id=${userId}`,
       cancelUrl: `${origin}/prices?paypal=cancelled`,
     });
 

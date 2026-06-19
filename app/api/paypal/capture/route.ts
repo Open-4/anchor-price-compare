@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get("order_id") || searchParams.get("token");
+    const orderId = searchParams.get("token") || searchParams.get("order_id");
     const userId = searchParams.get("user_id");
 
     if (!orderId) {
