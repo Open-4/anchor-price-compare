@@ -21,34 +21,24 @@ export async function GET() {
     return NextResponse.json(results);
   }
 
-  const base = mode === "live"
-    ? "https://api-m.paypal.com"
-    : "https://api-m.sandbox.paypal.com";
+  const base = "https://api-m.sandbox.paypal.com";
 
-  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-
-  try {
-    const res = await fetch(`${base}/v1/oauth2/token`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials",
-    });
-
-    const body = await res.text();
-    results.auth_test = {
-      status: res.status,
-      ok: res.ok,
-      body: res.ok ? "token obtained" : body,
-    };
-  } catch (err) {
-    results.auth_test = {
-      status: "NETWORK_ERROR",
-      error: String(err),
-    };
+  async function testAuth(id: string, secret: string, label: string) {
+    const auth = Buffer.from(`${id}:${secret}`).toString("base64");
+    try {
+      const res = await fetch(`${base}/v1/oauth2/token`, {
+        method: "POST",
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: "grant_type=client_credentials",
+      });
+      const body = await res.text();
+      return { status: res.status, ok: res.ok, body: res.ok ? "token_ok" : body };
+    } catch (err) {
+      return { status: "NETWORK_ERROR", error: String(err) };
+    }
   }
+
+  results.auth_via_env = await testAuth(clientId, clientSecret, "from env vars");
 
   return NextResponse.json(results);
 }

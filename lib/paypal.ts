@@ -1,13 +1,14 @@
+﻿const PAYPAL_MODE = (process.env.PAYPAL_MODE || "").replace(/^\uFEFF/, "");
 const PAYPAL_API_BASE =
-  process.env.PAYPAL_MODE === "live"
+  PAYPAL_MODE === "live"
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
 // ── Access Token ────────────────────────────────────────
 
 async function getAccessToken(): Promise<string> {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = (process.env.PAYPAL_CLIENT_ID || "").replace(/^\uFEFF/, "");
+  const clientSecret = (process.env.PAYPAL_CLIENT_SECRET || "").replace(/^\uFEFF/, "");
 
   if (!clientId || !clientSecret) {
     throw new Error("PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set");
@@ -150,3 +151,4 @@ export async function captureOrder(
     ),
   };
 }
+
