@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "node scripts/build.js",
+  "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
   "regions": ["hkg1"],
@@ -61,3 +61,4 @@
     }
   ]
 }
+
