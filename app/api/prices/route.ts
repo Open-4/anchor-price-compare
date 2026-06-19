@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 
@@ -31,15 +30,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    interface PriceRow {
-      product: string;
-      avgprice: Prisma.Decimal;
-      minprice: Prisma.Decimal;
-      maxprice: Prisma.Decimal;
-      count: bigint;
-    }
-
-    const rows = await prisma.$queryRaw<PriceRow[]>`
+    const sql = `
       SELECT
         product,
         AVG(price)::numeric(12,2) AS avgprice,
@@ -47,19 +38,21 @@ export async function GET(request: NextRequest) {
         MAX(price)::numeric(12,2) AS maxprice,
         COUNT(*)::int AS count
       FROM prices
-      WHERE ${EARTH_RADIUS_KM} * acos(
-        cos(radians(${lat})) * cos(radians(latitude))
-        * cos(radians(longitude) - radians(${lng}))
-        + sin(radians(${lat})) * sin(radians(latitude))
-      ) < ${radius}
-      ${keyword != null ? Prisma.sql`AND product ILIKE ${"%" + keyword + "%"}` : Prisma.empty}
+      WHERE $1 * acos(
+        cos(radians($2)) * cos(radians(latitude))
+        * cos(radians(longitude) - radians($3))
+        + sin(radians($2)) * sin(radians(latitude))
+      ) < $4
+      ${keyword ? `AND product ILIKE '%' || $5 || '%'` : ""}
       GROUP BY product
       ORDER BY count DESC, product ASC
     `;
+    const params: unknown[] = [EARTH_RADIUS_KM, lat, lng, radius];
+    if (keyword) params.push(keyword);
 
-    await prisma.$disconnect();
+    const rows = await prisma.$queryRawUnsafe(sql, ...params) as any[];
 
-    const data = rows.map((r) => ({
+    const data = rows.map((r: any) => ({
       product: r.product,
       avgPrice: Number(r.avgprice),
       minPrice: Number(r.minprice),
@@ -118,8 +111,8 @@ export async function POST(request: NextRequest) {
 
     // ── Transactional write ─────────────────────────────
 
-    const record = await prisma.$transaction(async (tx) => {
-      return tx.price.create({
+    const record = await prisma.$transaction(async (tx: any) => {
+      return (tx as any).price.create({
         data: {
           product: productName.trim(),
           price: priceNum,
