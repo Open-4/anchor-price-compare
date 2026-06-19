@@ -74,17 +74,17 @@ export default function UpgradeClient() {
           const active = planId === p.id;
           return (
             <button key={p.id} onClick={() => { setPlanId(p.id); setErrorMsg(""); }}
-              className={`relative rounded-2xl border-2 p-6 text-left transition-all ${
+              className={`relative rounded-2xl border-2 p-6 text-left transition-all ¥{
                 active ? "border-blue-500 bg-blue-50 shadow-lg shadow-blue-100" : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-md"
               }`}>
               {p.badge && <span className="absolute -top-3 right-4 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-medium text-white">{p.badge}</span>}
               {p.popular && <span className="absolute -top-3 left-4 rounded-full bg-amber-500 px-3 py-0.5 text-xs font-medium text-white">推荐</span>}
               <h3 className="text-lg font-semibold">{p.name}</h3>
               <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-3xl font-bold">${p.price}</span>
+                <span className="text-3xl font-bold">¥{p.price}</span>
                 <span className="text-sm text-zinc-400">{p.label}</span>
               </div>
-              {p.original && <p className="mt-1 text-xs text-zinc-400 line-through">${p.original}</p>}
+              {p.original && <p className="mt-1 text-xs text-zinc-400 line-through">¥{p.original}</p>}
               <ul className="mt-4 space-y-2">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-center gap-2 text-sm text-zinc-600">
@@ -98,7 +98,7 @@ export default function UpgradeClient() {
       </div>
 
       <div className="mx-auto mt-10 max-w-md text-center">
-        <p className="mb-3 text-sm text-zinc-500">已选：{plan.name} — ${plan.price}</p>
+        <p className="mb-3 text-sm text-zinc-500">已选：{plan.name} — ¥{plan.price}</p>
         <button onClick={handlePayPal} disabled={loading}
           className="w-full rounded-xl bg-[#0070ba] py-3 text-sm font-medium text-white shadow-lg hover:bg-[#003087] disabled:opacity-50">
           使用 PayPal 支付
@@ -109,3 +109,4 @@ export default function UpgradeClient() {
     </div>
   );
 }
+
