@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const prisma = getPrisma();
+    
     const body = await request.json();
     const { productName, price, unit, storeName, lat, lng } = body;
 
@@ -149,4 +149,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
 
