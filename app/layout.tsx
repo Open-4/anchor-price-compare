@@ -24,6 +24,7 @@ export default function RootLayout({
             </a>
             <div className="flex items-center gap-4 text-sm text-zinc-500">
               <a href="/prices" className="hover:text-zinc-900">查价格</a>
+              <a href="/upgrade" className="hover:text-zinc-900">升级 Pro</a>
               <a href="/login" className="hover:text-zinc-900">登录</a>
               <a
                 href="/register"
