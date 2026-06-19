@@ -30,9 +30,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user in database
-    await prisma.user.update({
+    await prisma.user.upsert({
       where: { id: userId },
-      data: { plan: "PRO", paypalOrderId: orderID },
+      update: { plan: "PRO", paypalOrderId: orderID },
+      create: {
+        id: userId,
+        email: `${userId}@checkout.local`,
+        name: "PayPal User",
+        password: "",
+        plan: "PRO",
+        paypalOrderId: orderID,
+      },
     });
 
     return NextResponse.json({
