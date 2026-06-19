@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
-function getPrisma() {
-  return new PrismaClient();
-}
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -12,7 +10,6 @@ const EARTH_RADIUS_KM = 6371;
 
 export async function GET(request: NextRequest) {
   try {
-    const prisma = getPrisma();
     const { searchParams } = new URL(request.url);
 
     const lat = parseFloat(searchParams.get("lat") ?? "");
