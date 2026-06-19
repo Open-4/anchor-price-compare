@@ -29,7 +29,6 @@ function getUserId(): string {
 export default function UpgradeClient() {
   const [planId, setPlanId] = useState("yearly");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   const plan = PLANS.find((p) => p.id === planId)!;
@@ -42,33 +41,25 @@ export default function UpgradeClient() {
       const res = await fetch("/api/paypal/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          price: plan.price,
-          currency: "USD",
-          userId: getUserId(),
-        }),
+        body: JSON.stringify({ price: plan.price, currency: "USD", userId: getUserId() }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "创建订单失败");
 
-      // 在新窗口/标签页打开 PayPal
-      window.open(data.approvalUrl, "_blank");
-      setSuccess(true);
+      // 直接跳转到 PayPal（同一标签页）
+      window.location.href = data.approvalUrl;
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "网络错误");
-    } finally {
       setLoading(false);
     }
   }
 
-  if (success) {
+  if (loading) {
     return (
-      <div className="mx-auto max-w-md px-4 py-24 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl">✓</div>
-        <h1 className="mt-6 text-2xl font-bold">正在跳转 PayPal</h1>
-        <p className="mt-2 text-sm text-zinc-500">新窗口已打开，请在 PayPal 完成付款。</p>
-        <p className="mt-1 text-xs text-zinc-400">付款完成后会自动跳回本站</p>
+      <div className="mx-auto max-w-md px-4 py-32 text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+        <p className="mt-4 text-base text-zinc-600">正在跳转 PayPal 安全支付…</p>
+        <p className="mt-2 text-xs text-zinc-400">请稍候，即将进入支付页面</p>
       </div>
     );
   }
@@ -110,7 +101,7 @@ export default function UpgradeClient() {
         <p className="mb-3 text-sm text-zinc-500">已选：{plan.name} — ${plan.price}</p>
         <button onClick={handlePayPal} disabled={loading}
           className="w-full rounded-xl bg-[#0070ba] py-3 text-sm font-medium text-white shadow-lg hover:bg-[#003087] disabled:opacity-50">
-          {loading ? "正在创建订单…" : "使用 PayPal 支付"}
+          使用 PayPal 支付
         </button>
         <p className="mt-2 text-xs text-zinc-400">支持信用卡 / 借记卡 / PayPal 余额</p>
         {errorMsg && <p className="mt-4 text-sm text-red-500">{errorMsg}</p>}
