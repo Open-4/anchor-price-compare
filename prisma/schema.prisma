@@ -25,6 +25,7 @@ model User {
   password  String
   plan      PlanType @default(FREE)
   lemonSqueezyCustomerId String? @unique
+  paypalOrderId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -61,3 +62,4 @@ model SafetyReport {
   @@index([latitude, longitude])
   @@map("safety_reports")
 }
+
