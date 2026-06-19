@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development.local
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Codex / Agent artifacts
+.codex/
+.agents/
+
+# Build artifacts
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Temp
+/tmp/
+/work/
+/outputs/

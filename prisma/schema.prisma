@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  RIOT    @map("暴乱")
+  THEFT   @map("盗窃")
+  WEATHER @map("天气")
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  plan      PlanType @default(FREE)
+  lemonSqueezyCustomerId String? @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  safetyReports SafetyReport[]
+
+  @@map("users")
+}
+
+model Price {
+  id        String   @id @default(uuid())
+  product   String
+  unit      String   @default("元/斤")
+  price     Decimal  @db.Decimal(12, 2)
+  storeName String?
+  latitude  Float
+  longitude Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([latitude, longitude])
+  @@map("prices")
+}
+
+model SafetyReport {
+  id          String     @id @default(uuid())
+  eventType   EventType
+  description String?
+  latitude    Float
+  longitude   Float
+  reportedAt  DateTime   @default(now())
+  reporterId  String?
+  reporter    User?      @relation(fields: [reporterId], references: [id])
+
+  @@index([latitude, longitude])
+  @@map("safety_reports")
+}
